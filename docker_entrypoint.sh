@@ -98,7 +98,7 @@ parse_args "$@"
 [ -n "$AUTO_PREFIX_ROUTE" ] || AUTO_PREFIX_ROUTE=true
 [ -n "$AUTO_PREFIX_SLAAC" ] || AUTO_PREFIX_SLAAC=true
 [ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
-[ -n "$NETWORK_NAME" ] || NETWORK_NAME="OT-BR-MQTT_SN"
+[ -n "$NETWORK_NAME" ] || NETWORK_NAME="OTBR-MQTT_SN"
 # Use same default network configuration as the Nordic Semiconductor Raspberry PI
 # borderrouter (see /etc/border_router.conf on the RPI)
 [ -n "$NETWORK_KEY" ] || NETWORK_KEY="00112233445566778899AABBCCDDEEFF"
