@@ -78,6 +78,11 @@ function parse_args()
             shift
             shift
             ;;
+        --network-key)
+            NETWORK_KEY=$2
+            shift
+            shift
+            ;;
         --psck)
             NETWORK_PSKC=$2
             shift
