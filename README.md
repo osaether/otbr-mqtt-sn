@@ -32,5 +32,6 @@ The command line options with default values are shown in the following table.
 | NAT64 Prefix         |  --nat64-prefix                 | 64:ff9b::/96                     |         |
 | Default prefix route |  --disable-default-prefix-route | Enabled                          |         |
 | Default prefix slaac |  --disable-default-prefix-slaac | Enabled                          |         |
+| MQTT Broker          |  --broker                       | mqtt.eclipse.org                 |         |
 
 1: These are changed only when the Network Name is changed. To force a change you must change the Network Name.

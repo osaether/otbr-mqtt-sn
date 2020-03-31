@@ -10,7 +10,6 @@ RUN wget --progress=dot:giga --no-check-certificate -O "$MQTT_SN_REPO".zip "$MQT
 RUN unzip "$MQTT_SN_REPO".zip
 RUN rm "$MQTT_SN_REPO".zip
 
-RUN cd "$MQTT_SN_REPO"-develop/MQTTSNGateway && sed -i "s/^BrokerName=.*$/BrokerName=137.135.83.217/" gateway.conf
 RUN cd "$MQTT_SN_REPO"-develop/MQTTSNGateway && sed -i "s/^GatewayUDP6Hops=.*$/GatewayUDP6Hops=64/" gateway.conf
 RUN cd "$MQTT_SN_REPO"-develop/MQTTSNGateway && sed -i "s/^GatewayUDP6Port=.*$/GatewayUDP6Port=47193/" gateway.conf
 RUN cd "$MQTT_SN_REPO"-develop/MQTTSNGateway && sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=ff33:40:fdde:ad00:beef:0:0:1/" gateway.conf

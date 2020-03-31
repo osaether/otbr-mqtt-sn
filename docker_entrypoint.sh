@@ -89,6 +89,12 @@ function parse_args()
             shift
             ;;
 
+        --broker)
+            BROKER_NAME=$2
+            shift
+            shift
+            ;;
+
         *)
             shift
             ;;
@@ -111,6 +117,7 @@ parse_args "$@"
 [ -n "$NETWORK_XPANID" ] || NETWORK_XPANID="DEAD00BEEF00CAFE"
 [ -n "$NCP_CHANNEL" ] || NCP_CHANNEL="11"
 [ -n "$NETWORK_PSKC" ] || NETWORK_PSKC="E00F739803E92CB42DAA7CCE1D2A394D"
+[ -n "$BROKER_NAME" ] || BROKER_NAME="mqtt.eclipse.org"
 
 echo "NCP_PATH:" $NCP_PATH
 echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME
@@ -122,6 +129,8 @@ NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
 sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
+
+sed -i "s/^BrokerName=.*$/BrokerName=$BROKER_NAME/" /app/borderrouter/gateway.conf
 
 echo "Config:NCP:SocketPath \"$NCP_PATH\"" > /etc/wpantund.conf
 echo "Config:TUN:InterfaceName $TUN_INTERFACE_NAME " >> /etc/wpantund.conf
