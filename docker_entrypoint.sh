@@ -109,7 +109,7 @@ parse_args "$@"
 [ -n "$AUTO_PREFIX_ROUTE" ] || AUTO_PREFIX_ROUTE=true
 [ -n "$AUTO_PREFIX_SLAAC" ] || AUTO_PREFIX_SLAAC=true
 [ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
-[ -n "$NETWORK_NAME" ] || NETWORK_NAME="OTBR-MQTT_SN"
+[ -n "$NETWORK_NAME" ] || NETWORK_NAME="OTBR-MQTT-SN"
 # Use same default network configuration as the Nordic Semiconductor Raspberry PI
 # borderrouter (see /etc/border_router.conf on the RPI)
 [ -n "$NETWORK_KEY" ] || NETWORK_KEY="00112233445566778899AABBCCDDEEFF"
@@ -153,23 +153,75 @@ nohup 2>&1 /app/borderrouter/MQTT-SNGateway &
 # Atach to the Thread network.
 ###############################################################################
 
+CNK=0
+if !(wpanctl getprop Network:Key | grep -q "Network:Key = \[\"$NETWORK_KEY\"\]"); then
+    CNK=1
+fi
+
+CNN=0
 if !(wpanctl getprop Network:Name | grep -q "Network:Name = \"$NETWORK_NAME\""); then
+    CNN=1
+fi
+
+CNP=0
+if !(wpanctl getprop Network:PANID | grep -q "Network:PANID = \"$NETWORK_PANID\""); then
+    CNP=1
+fi
+
+CNX=0
+if !(wpanctl getprop Network:XPANID | grep -q "Network:XPANID = \"$NETWORK_XPANID\""); then
+    CNX=1
+fi
+
+CNC=0
+if !(wpanctl getprop NCP:Channel | grep -q "NCP:Channel = \"$NCP_CHANNEL\""); then
+    CNC=1
+fi
+
+CNS=0
+if !(wpanctl getprop Network:PSKc | grep -q "Network:PSKc = \[\"$NETWORK_PSKC\"\]"); then
+    CNS=1
+fi
+
+if (( $CNK==1 )) || (( $CNN==1 )) || (( $CNP==1 )) || (( $CNX==1 )) || (( $CNC==1 )) || (( $CNS==1 )); then
     wpanctl leave
     sleep 1
 
     wpanctl reset
     sleep 2
+fi
 
+if (( $CNK==1 )); then
     wpanctl setprop Network:Key --data $NETWORK_KEY
-    wpanctl setprop Network:PANID $NETWORK_PANID
-    wpanctl setprop Network:XPANID $NETWORK_XPANID
-    wpanctl setprop NCP:Channel $NCP_CHANNEL
+fi
+
+if (( $CNN==1 )); then
     wpanctl setprop Network:Name $NETWORK_NAME
+fi
+
+if (( $CNP==1 )); then
+    wpanctl setprop Network:PANID $NETWORK_PANID
+fi
+
+if (( $CNX==1 )); then
+    wpanctl setprop Network:XPANID $NETWORK_XPANID
+fi
+
+if (( $CNC==1 )); then
+    wpanctl setprop NCP:Channel $NCP_CHANNEL
+fi
+
+if (( $CNS==1 )); then
     wpanctl setprop Network:PSKc $NETWORK_PSKC
+fi
+
+if (( $CNK==1 )) || (( $CNN==1 )) || (( $CNP==1 )) || (( $CNX==1 )) || (( $CNC==1 )) || (( $CNS==1 )); then
     wpanctl attach
     sleep 3
-    wpanctl status
-fi
+fi    
+
+wpanctl status
+
 
 while [ $? = 0 ]
 do
