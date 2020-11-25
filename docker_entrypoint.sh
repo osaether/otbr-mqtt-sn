@@ -33,15 +33,19 @@ function parse_args()
 {
     while [ $# -gt 0 ]
     do
-        echo $1
         case $1 in
-        --ncp-path)
-            NCP_PATH=$2
+        --radio-url)
+            RADIO_URL="$2"
             shift
             shift
             ;;
         --interface|-I)
             TUN_INTERFACE_NAME=$2
+            shift
+            shift
+            ;;
+        --backbone-interface | -B)
+            BACKBONE_INTERFACE_ARG="-B $2"
             shift
             shift
             ;;
@@ -59,17 +63,17 @@ function parse_args()
             shift
             ;;
         --panid)
-            NETWORK_PANID=$2
+            PANID=$2
             shift
             shift
             ;;
         --xpanid)
-            NETWORK_XPANID=$2
+            XPANID=$2
             shift
             shift
             ;;
-        --ncp-channel)
-            NCP_CHANNEL=$2
+        --channel)
+            CHANNEL=$2
             shift
             shift
             ;;
@@ -78,13 +82,13 @@ function parse_args()
             shift
             shift
             ;;
-        --network-key)
-            NETWORK_KEY=$2
+        --masterkey-key)
+            MASTER_KEY=$2
             shift
             shift
             ;;
         --psck)
-            NETWORK_PSKC=$2
+            PSKC=$2
             shift
             shift
             ;;
@@ -104,23 +108,23 @@ function parse_args()
 
 parse_args "$@"
 
-[ -n "$NCP_PATH" ] || NCP_PATH="/dev/ttyACM0"
+[ -n "$RADIO_URL" ] || RADIO_URL="spinel+hdlc+uart:///dev/ttyACM0"
 [ -n "$TUN_INTERFACE_NAME" ] || TUN_INTERFACE_NAME="wpan0"
 [ -n "$AUTO_PREFIX_ROUTE" ] || AUTO_PREFIX_ROUTE=true
 [ -n "$AUTO_PREFIX_SLAAC" ] || AUTO_PREFIX_SLAAC=true
 [ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
-[ -n "$NETWORK_NAME" ] || NETWORK_NAME="OTBR-MQTT-SN"
+[ -n "$PSKC" ] || PSKC="b91f5aa92fd4b46e513001d9b3201c8f"
 # Use same default network configuration as the Nordic Semiconductor Raspberry PI
 # borderrouter (see /etc/border_router.conf on the RPI)
-[ -n "$NETWORK_KEY" ] || NETWORK_KEY="00112233445566778899AABBCCDDEEFF"
-[ -n "$NETWORK_PANID" ] || NETWORK_PANID="0xABCD"
-[ -n "$NETWORK_XPANID" ] || NETWORK_XPANID="DEAD00BEEF00CAFE"
-[ -n "$NCP_CHANNEL" ] || NCP_CHANNEL="11"
-[ -n "$NETWORK_PSKC" ] || NETWORK_PSKC="E00F739803E92CB42DAA7CCE1D2A394D"
+[ -n "$MASTER_KEY" ] || MASTER_KEY="00112233445566778899AABBCCDDEEFF"
+[ -n "$PANID" ] || PANID="0xABCD"
+[ -n "$XPANID" ] || XPANID="DEAD00BEEF00CAFE"
+[ -n "$CHANNEL" ] || CHANNEL="11"
 [ -n "$BROKER_NAME" ] || BROKER_NAME="mqtt.eclipse.org"
 
-echo "NCP_PATH:" $NCP_PATH
+echo "RADIO_URL:" $RADIO_URL
 echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME
+echo "BACKBONE_INTERFACE: $BACKBONE_INTERFACE_ARG"
 echo "NAT64_PREFIX:" $NAT64_PREFIX
 echo "AUTO_PREFIX_ROUTE:" $AUTO_PREFIX_ROUTE
 echo "AUTO_PREFIX_SLAAC:" $AUTO_PREFIX_SLAAC
@@ -130,100 +134,35 @@ NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
 sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
 
-sed -i "s/^BrokerName=.*$/BrokerName=$BROKER_NAME/" /app/borderrouter/gateway.conf
+sed -i "s/^BrokerName=.*$/BrokerName=$BROKER_NAME/" /app/gateway.conf
+sed -i "s/^GatewayUDP6Hops=.*$/GatewayUDP6Hops=64/" /app/gateway.conf
+sed -i "s/^GatewayUDP6Port=.*$/GatewayUDP6Port=47193/" /app/gateway.conf
 
-echo "Config:NCP:SocketPath \"$NCP_PATH\"" > /etc/wpantund.conf
-echo "Config:TUN:InterfaceName $TUN_INTERFACE_NAME " >> /etc/wpantund.conf
-echo "Daemon:SetDefaultRouteForAutoAddedPrefix $AUTO_PREFIX_ROUTE" >> /etc/wpantund.conf
-echo "IPv6:SetSLAACForAutoAddedPrefix $AUTO_PREFIX_SLAAC" >> /etc/wpantund.conf
-
-echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME\"" > /etc/default/otbr-agent
-echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -p 80\"" > /etc/default/otbr-web
+echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME $BACKBONE_INTERFACE_ARG -d7 $RADIO_URL\"" >/etc/default/otbr-agent
+echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" >/etc/default/otbr-web
 
 echo "net.ipv6.conf.all.disable_ipv6=0" >> /etc/sysctl.conf
 echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
 echo "net.ipv4.conf.all.forwarding=1" >> /etc/sysctl.conf
 
-NAT64=1 DNS64=1 /app/borderrouter/script/server
+/app/script/server
+sleep 5
+
+ot-ctl dataset init new
+ot-ctl dataset networkname "$NETWORK_NAME"
+ot-ctl dataset masterkey "$MASTER_KEY"
+ot-ctl dataset panid "$PANID"
+ot-ctl dataset extpanid "$XPANID"
+ot-ctl dataset channel "$CHANNEL"
+ot-ctl dataset pskc "$PSKC"
+ot-ctl dataset commit active
+ot-ctl ifconfig up
+ot-ctl thread start
+
+MESH=$(ot-ctl dataset meshlocalprefix | sed -n 1p | sed 's/Mesh Local Prefix: //' | awk -F '::' '{print $1}')
+sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=ff33:40:$MESH::1/" /app/gateway.conf
 
 echo "Starting MQTT-SN Gateway"
-nohup 2>&1 /app/borderrouter/MQTT-SNGateway &
+nohup 2>&1 /app/MQTT-SNGateway &
 
-###############################################################################
-# Atach to the Thread network.
-###############################################################################
-
-CNK=0
-if !(wpanctl getprop Network:Key | grep -q "Network:Key = \[\"$NETWORK_KEY\"\]"); then
-    CNK=1
-fi
-
-CNN=0
-if !(wpanctl getprop Network:Name | grep -q "Network:Name = \"$NETWORK_NAME\""); then
-    CNN=1
-fi
-
-CNP=0
-if !(wpanctl getprop Network:PANID | grep -q "Network:PANID = \"$NETWORK_PANID\""); then
-    CNP=1
-fi
-
-CNX=0
-if !(wpanctl getprop Network:XPANID | grep -q "Network:XPANID = \"$NETWORK_XPANID\""); then
-    CNX=1
-fi
-
-CNC=0
-if !(wpanctl getprop NCP:Channel | grep -q "NCP:Channel = \"$NCP_CHANNEL\""); then
-    CNC=1
-fi
-
-CNS=0
-if !(wpanctl getprop Network:PSKc | grep -q "Network:PSKc = \[\"$NETWORK_PSKC\"\]"); then
-    CNS=1
-fi
-
-if (( $CNK==1 )) || (( $CNN==1 )) || (( $CNP==1 )) || (( $CNX==1 )) || (( $CNC==1 )) || (( $CNS==1 )); then
-    wpanctl leave
-    sleep 1
-
-    wpanctl reset
-    sleep 2
-fi
-
-if (( $CNK==1 )); then
-    wpanctl setprop Network:Key --data $NETWORK_KEY
-fi
-
-if (( $CNN==1 )); then
-    wpanctl setprop Network:Name $NETWORK_NAME
-fi
-
-if (( $CNP==1 )); then
-    wpanctl setprop Network:PANID $NETWORK_PANID
-fi
-
-if (( $CNX==1 )); then
-    wpanctl setprop Network:XPANID $NETWORK_XPANID
-fi
-
-if (( $CNC==1 )); then
-    wpanctl setprop NCP:Channel $NCP_CHANNEL
-fi
-
-if (( $CNS==1 )); then
-    wpanctl setprop Network:PSKc $NETWORK_PSKC
-fi
-
-if (( $CNK==1 )) || (( $CNN==1 )) || (( $CNP==1 )) || (( $CNX==1 )) || (( $CNC==1 )) || (( $CNS==1 )); then
-    wpanctl attach
-    sleep 3
-fi    
-
-wpanctl status
-
-
-while [ $? = 0 ]
-do
-    sleep 60
-done
+tail -f /var/log/syslog

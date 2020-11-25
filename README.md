@@ -5,7 +5,7 @@ Dockerfile for [OpenThread Border Router](https://openthread.io/guides/border-ro
 # Building
 
 ```shell 
-docker build --no-cache -t otbr-mqtt-sn -f ./Dockerfile .
+docker build --pull --no-cache -t otbr-mqtt-sn -f ./Dockerfile .
 ```
 
 # Running
@@ -22,14 +22,15 @@ The command line options with default values are shown in the following table.
 | Parameter            | Command line option             | Default value                    | 
 |----------------------|:--------------------------------|:---------------------------------|
 | Network Name         |  --network-name                 | OTBR-MQTT-SN                     |
-| NCP Serial Port      |  --ncp-path                     | /dev/ttyACM0                     |
+| RCP Serial Port      |  --radio-url                    | spinel+hdlc+uart:///dev/ttyACM0  |
 | PAN ID               |  --panid                        | 0xABCD                           |
 | Extended PAN ID      |  --xpanid                       | DEAD00BEEF00CAFE                 |
-| NCP Channel          |  --ncp-channel                  | 11                               |
+| Channel              |  --channel                      | 11                               |
 | Network Key          |  --network-key                  | 00112233445566778899AABBCCDDEEFF |
-| Network PSKc         |  --pskc                         | E00F739803E92CB42DAA7CCE1D2A394D |
+| Network PSKc         |  --pskc                         | b91f5aa92fd4b46e513001d9b3201c8f |
 | TUN Interface Name   |  --interface                    | wpan0                            |
 | NAT64 Prefix         |  --nat64-prefix                 | 64:ff9b::/96                     |
 | Default prefix route |  --disable-default-prefix-route | Enabled                          |
 | Default prefix slaac |  --disable-default-prefix-slaac | Enabled                          |
+| Backbone Interface   |  --backbone-interface           |                                  |
 | MQTT Broker          |  --broker                       | mqtt.eclipse.org                 |
