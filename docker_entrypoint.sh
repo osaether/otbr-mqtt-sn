@@ -113,7 +113,7 @@ parse_args "$@"
 [ -n "$AUTO_PREFIX_ROUTE" ] || AUTO_PREFIX_ROUTE=true
 [ -n "$AUTO_PREFIX_SLAAC" ] || AUTO_PREFIX_SLAAC=true
 [ -n "$NAT64_PREFIX" ] || NAT64_PREFIX="64:ff9b::/96"
-[ -n "$PSKC" ] || PSKC="b91f5aa92fd4b46e513001d9b3201c8f"
+[ -n "$PSKC" ] || PSKC="5ce66d049d007088ad900dfcc2a55ee3"
 # Use same default network configuration as the Nordic Semiconductor Raspberry PI
 # borderrouter (see /etc/border_router.conf on the RPI)
 [ -n "$MASTER_KEY" ] || MASTER_KEY="00112233445566778899AABBCCDDEEFF"
@@ -150,6 +150,7 @@ sleep 5
 
 ot-ctl dataset init new
 ot-ctl dataset networkname "$NETWORK_NAME"
+ot-ctl dataset activetimestamp 1
 ot-ctl dataset masterkey "$MASTER_KEY"
 ot-ctl dataset panid "$PANID"
 ot-ctl dataset extpanid "$XPANID"
