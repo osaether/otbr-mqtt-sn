@@ -121,7 +121,7 @@ parse_args "$@"
 [ -n "$PANID" ] || PANID="0xABCD"
 [ -n "$XPANID" ] || XPANID="DEAD00BEEF00CAFE"
 [ -n "$CHANNEL" ] || CHANNEL="11"
-[ -n "$BROKER_NAME" ] || BROKER_NAME="mqtt.eclipse.org"
+[ -n "$BROKER_NAME" ] || BROKER_NAME="mqtt.eclipseprojects.io"
 
 echo "RADIO_URL:" $RADIO_URL
 echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME

@@ -33,4 +33,4 @@ The command line options with default values are shown in the following table.
 | Default prefix route |  --disable-default-prefix-route | Enabled                          |
 | Default prefix slaac |  --disable-default-prefix-slaac | Enabled                          |
 | Backbone Interface   |  --backbone-interface           |                                  |
-| MQTT Broker          |  --broker                       | mqtt.eclipse.org                 |
+| MQTT Broker          |  --broker                       | mqtt.eclipseprojects.io          |
