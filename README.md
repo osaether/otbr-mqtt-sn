@@ -32,5 +32,5 @@ The command line options with default values are shown in the following table.
 | NAT64 Prefix         |  --nat64-prefix                 | 64:ff9b::/96                     |
 | Default prefix route |  --disable-default-prefix-route | Enabled                          |
 | Default prefix slaac |  --disable-default-prefix-slaac | Enabled                          |
-| Backbone Interface   |  --backbone-interface           |                                  |
+| Backbone Interface   |  --backbone-interface           | eth0                             |
 | MQTT Broker          |  --broker                       | mqtt.eclipseprojects.io          |
