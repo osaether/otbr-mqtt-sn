@@ -153,7 +153,7 @@ sleep 5
 ot-ctl dataset init new
 ot-ctl dataset networkname "$NETWORK_NAME"
 ot-ctl dataset activetimestamp 1
-ot-ctl dataset masterkey "$MASTER_KEY"
+ot-ctl dataset networkkey "$MASTER_KEY"
 ot-ctl dataset panid "$PANID"
 ot-ctl dataset extpanid "$XPANID"
 ot-ctl dataset channel "$CHANNEL"
