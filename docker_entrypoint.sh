@@ -99,6 +99,12 @@ function parse_args()
             shift
             ;;
 
+        --mqttsn-broadcast-address)
+           MQTTSN_BROADCAST_ADDRESS=$2
+           shift
+           shift
+           ;;
+
         *)
             shift
             ;;
@@ -148,12 +154,16 @@ echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
 echo "net.ipv4.conf.all.forwarding=1" >> /etc/sysctl.conf
 
 /app/script/server
-sleep 5
+# ensure enough time for the otbr services to start
+sleep 20
 
 ot-ctl dataset init new
 ot-ctl dataset networkname "$NETWORK_NAME"
-ot-ctl dataset activetimestamp 1
-ot-ctl dataset masterkey "$MASTER_KEY"
+# Set the dataset timestamp to 'now'. This will ensure that when the border router is
+# restarted (and thus gets  a different mesh-local prefix), the nodes which were previously
+# connected to the network will be forced to move over to this new mesh-local prefix.
+ot-ctl dataset activetimestamp $(date +%s)
+ot-ctl dataset networkkey "$MASTER_KEY"
 ot-ctl dataset panid "$PANID"
 ot-ctl dataset extpanid "$XPANID"
 ot-ctl dataset channel "$CHANNEL"
@@ -162,10 +172,13 @@ ot-ctl dataset commit active
 ot-ctl ifconfig up
 ot-ctl thread start
 
+# Set the address on which the MQTT-SN gateway needs to listen for discovery requests
+# Defaults to Thread's mesh-local "all nodes" address unless explicitly overridden
 MESH=$(ot-ctl dataset meshlocalprefix | sed -n 1p | sed 's/Mesh Local Prefix: //' | awk -F '::' '{print $1}')
-sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=ff33:40:$MESH::1/" /app/gateway.conf
+[ -n "$MQTTSN_BROADCAST_ADDRESS" ] || MQTTSN_BROADCAST_ADDRESS="ff33:40:$MESH::1"
+sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=$MQTTSN_BROADCAST_ADDRESS/" /app/gateway.conf
 
-echo "Starting MQTT-SN Gateway"
+echo "Starting MQTT-SN Gateway listening on: " $MQTTSN_BROADCAST_ADDRESS
 nohup 2>&1 /app/MQTT-SNGateway &
 
 tail -f /var/log/syslog
