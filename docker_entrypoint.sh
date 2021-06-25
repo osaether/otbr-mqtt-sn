@@ -167,6 +167,19 @@ ot-ctl dataset networkkey "$MASTER_KEY"
 ot-ctl dataset panid "$PANID"
 ot-ctl dataset extpanid "$XPANID"
 ot-ctl dataset channel "$CHANNEL"
+# Since 20/06/2021, the default OpenThread config (and therefore also the default border router
+# docker image) has Thread 1.2.1 "MLE Announce" turned on. This is a feature which announces the
+# presence of the network periodically on all channels in the active dataset's channel mask, but
+# has the consequence of making the router switch away from the active channel for a bit. If you
+# have sleepy end devices connected to the router, these may end up going to a detached state if
+# they attempt a data poll when the parent has switched away to announce on another channel.
+# To avoid this, set the channel mask for the border router such that only the configured channel
+# is allowed. This avoids the issue with the announce feature, but will prevent channel hopping
+# from taking place (which would be a very advanced use-case versus having sleepy devices in the
+# network).
+CHANNELMASK=$((2 ** $CHANNEL))
+CHANNELMASK=$(printf '0x%08x' $CHANNELMASK)
+ot-ctl dataset channelmask $CHANNELMASK
 ot-ctl dataset pskc "$PSKC"
 ot-ctl dataset commit active
 ot-ctl ifconfig up
