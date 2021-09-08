@@ -10,14 +10,14 @@ docker build --pull --no-cache -t otbr-mqtt-sn -f ./Dockerfile .
 
 # Building RCP for the nRF52840 dongle (PCA10059)
 
-You need the [GNU ARM toolchain](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm) to build RCP for nRF52840.
-
 ```shell
-git clone https://github.com/openthread/openthread.git
-cd openthread
-./bootstrap
-make -f examples/Makefile-nrf52840 USB=1 BOOTLOADER=USB
-arm-none-eabi-objcopy -O ihex output/nrf52840/bin/ot-rcp rcp-pca10059.hex
+git clone https://github.com/openthread/ot-nrf528xx.git
+cd ot-nrf528xx
+git submodule update --init
+# Skip the following line if you have the GNU Arm Embedded tools installed
+./script/bootstrap
+./script/build nrf52840 USB_trans -DOT_BOOTLOADER=USB
+arm-none-eabi-objcopy -O ihex build/bin/ot-rcp rcp-pca10059.hex
 ```
 See here for instructions on how to program the nRF52840 dongle:
 [nRF52840 Dongle Programming Tutorial](https://devzone.nordicsemi.com/nordic/short-range-guides/b/getting-started/posts/nrf52840-dongle-programming-tutorial)
