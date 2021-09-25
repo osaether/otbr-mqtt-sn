@@ -16,5 +16,6 @@ FROM openthread/otbr:latest
 
 COPY --from=build-mqtt /paho.mqtt-sn.embedded-c-master/MQTTSNGateway/bin/MQTT* /app/
 COPY --from=build-mqtt /paho.mqtt-sn.embedded-c-master/MQTTSNGateway/bin/*.conf /app/
+COPY --from=build-mqtt /paho.mqtt-sn.embedded-c-master/build.gateway/MQTTSNPacket/src/libMQTTSNPacket.so /usr/local/lib/
 
 ADD docker_entrypoint.sh /app/etc/docker
