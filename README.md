@@ -40,7 +40,7 @@ The command line options with default values are shown in the following table.
 | PAN ID               |  --panid                        | 0xABCD                           |
 | Extended PAN ID      |  --xpanid                       | DEAD00BEEF00CAFE                 |
 | Channel              |  --channel                      | 11                               |
-| Network Key          |  --network-key                  | 00112233445566778899AABBCCDDEEFF |
+| Network Key          |  --master-key                   | 00112233445566778899AABBCCDDEEFF |
 | Network PSKc         |  --pskc                         | 5ce66d049d007088ad900dfcc2a55ee3 |
 | TUN Interface Name   |  --interface                    | wpan0                            |
 | NAT64 Prefix         |  --nat64-prefix                 | 64:ff9b::/96                     |

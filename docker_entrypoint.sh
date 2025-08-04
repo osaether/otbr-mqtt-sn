@@ -82,7 +82,7 @@ function parse_args()
             shift
             shift
             ;;
-        --masterkey-key)
+        --master-key)
             MASTER_KEY=$2
             shift
             shift
@@ -187,11 +187,11 @@ ot-ctl thread start
 
 # Set the address on which the MQTT-SN gateway needs to listen for discovery requests
 # Defaults to Thread's mesh-local "all nodes" address unless explicitly overridden
-MESH=$(ot-ctl dataset meshlocalprefix | sed -n 1p | sed 's/Mesh Local Prefix: //' | awk -F '::' '{print $1}')
+MESH=$(ot-ctl dataset meshlocalprefix | sed -n '1s/Mesh Local Prefix: //p' | awk -F '::' '{print $1}')
 [ -n "$MQTTSN_BROADCAST_ADDRESS" ] || MQTTSN_BROADCAST_ADDRESS="ff33:40:$MESH::1"
 sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=$MQTTSN_BROADCAST_ADDRESS/" /app/gateway.conf
 
 echo "Starting MQTT-SN Gateway listening on: " $MQTTSN_BROADCAST_ADDRESS
-nohup 2>&1 /app/MQTT-SNGateway &
+nohup /app/MQTT-SNGateway > /var/log/mqtt-sn.log 2>&1 &
 
 tail -f /var/log/syslog

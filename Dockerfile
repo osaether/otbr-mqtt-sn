@@ -1,6 +1,6 @@
 ARG MQTT_SN_COMMIT=f2dcda358f21e264de57b47b00ab6165bab4da18
 
-FROM ubuntu:18.04 AS build-mqtt
+FROM ubuntu:22.04 AS build-mqtt
 
 ARG MQTT_SN_COMMIT
 
@@ -25,3 +25,5 @@ COPY --from=build-mqtt /paho.mqtt-sn.embedded-c-"$MQTT_SN_COMMIT"/MQTTSNGateway/
 COPY --from=build-mqtt /paho.mqtt-sn.embedded-c-"$MQTT_SN_COMMIT"/build.gateway/MQTTSNPacket/src/libMQTTSNPacket.so /usr/local/lib/
 
 ADD docker_entrypoint.sh /app/etc/docker
+
+ENTRYPOINT ["/app/etc/docker/docker_entrypoint.sh"]
