@@ -325,9 +325,16 @@ fi
 
 [ -n "$MQTTSN_BROADCAST_ADDRESS" ] || MQTTSN_BROADCAST_ADDRESS="ff33:40:$MESH::1"
 
-# Configure MQTT-SN gateway broadcast address if file exists
+# Configure MQTT-SN gateway broadcast address if config file exists
 if [ -f "/app/gateway.conf" ]; then
     sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=$MQTTSN_BROADCAST_ADDRESS/" /app/gateway.conf
+else
+    echo "Error: /app/gateway.conf not found"
+    exit 1
+fi
+
+# Start MQTT-SN Gateway if binary exists
+if [ -f "/app/MQTT-SNGateway" ]; then
     echo "Starting MQTT-SN Gateway listening on: $MQTTSN_BROADCAST_ADDRESS"
     if ! nohup /app/MQTT-SNGateway > /var/log/mqtt-sn-gateway.log 2>&1 &; then
         echo "Error: Failed to start MQTT-SN Gateway"
