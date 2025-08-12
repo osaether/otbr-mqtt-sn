@@ -1,6 +1,6 @@
 ARG MQTT_SN_COMMIT=07a95121fc40ee74de4695a23518a312fb802fe8
 
-FROM ubuntu:18.04 AS build-mqtt
+FROM ubuntu:22.04 AS build-mqtt
 
 ARG MQTT_SN_COMMIT
 
