@@ -40,17 +40,17 @@ function parse_args()
             shift
             ;;
         --interface|-I)
-            TUN_INTERFACE_NAME=$2
+            TUN_INTERFACE_NAME="$2"
             shift
             shift
             ;;
         --backbone-interface | -B)
-            BACKBONE_INTERFACE=$2
+            BACKBONE_INTERFACE="$2"
             shift
             shift
             ;;
         --nat64-prefix)
-            NAT64_PREFIX=$2
+            NAT64_PREFIX="$2"
             shift
             shift
             ;;
@@ -63,44 +63,44 @@ function parse_args()
             shift
             ;;
         --panid)
-            PANID=$2
+            PANID="$2"
             shift
             shift
             ;;
         --xpanid)
-            XPANID=$2
+            XPANID="$2"
             shift
             shift
             ;;
         --channel)
-            CHANNEL=$2
+            CHANNEL="$2"
             shift
             shift
             ;;
         --network-name)
-            NETWORK_NAME=$2
+            NETWORK_NAME="$2"
             shift
             shift
             ;;
         --network-key)
-            MASTER_KEY=$2
+            MASTER_KEY="$2"
             shift
             shift
             ;;
         --pskc)
-            PSKC=$2
+            PSKC="$2"
             shift
             shift
             ;;
 
         --broker)
-            BROKER_NAME=$2
+            BROKER_NAME="$2"
             shift
             shift
             ;;
 
         --mqttsn-broadcast-address)
-           MQTTSN_BROADCAST_ADDRESS=$2
+           MQTTSN_BROADCAST_ADDRESS="$2"
            shift
            shift
            ;;
@@ -130,21 +130,21 @@ parse_args "$@"
 [ -n "$CHANNEL" ] || CHANNEL="11"
 [ -n "$BROKER_NAME" ] || BROKER_NAME="mqtt.eclipseprojects.io"
 
-echo "RADIO_URL:" $RADIO_URL
-echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME
-echo "BACKBONE_INTERFACE:" $BACKBONE_INTERFACE
-echo "NAT64_PREFIX:" $NAT64_PREFIX
-echo "AUTO_PREFIX_ROUTE:" $AUTO_PREFIX_ROUTE
-echo "AUTO_PREFIX_SLAAC:" $AUTO_PREFIX_SLAAC
+echo "RADIO_URL:" "$RADIO_URL"
+echo "TUN_INTERFACE_NAME:" "$TUN_INTERFACE_NAME"
+echo "BACKBONE_INTERFACE:" "$BACKBONE_INTERFACE"
+echo "NAT64_PREFIX:" "$NAT64_PREFIX"
+echo "AUTO_PREFIX_ROUTE:" "$AUTO_PREFIX_ROUTE"
+echo "AUTO_PREFIX_SLAAC:" "$AUTO_PREFIX_SLAAC"
 
 NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 
-sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
-sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
+sed -i "s|^prefix.*$|prefix $NAT64_PREFIX|" /etc/tayga.conf
+sed -i "s|dns64.*$|dns64 $NAT64_PREFIX {};|" /etc/bind/named.conf.options
 
-sed -i "s/^BrokerName=.*$/BrokerName=$BROKER_NAME/" /app/gateway.conf
-sed -i "s/^GatewayUDP6Hops=.*$/GatewayUDP6Hops=64/" /app/gateway.conf
-sed -i "s/^GatewayUDP6Port=.*$/GatewayUDP6Port=47193/" /app/gateway.conf
+sed -i "s|^BrokerName=.*$|BrokerName=$BROKER_NAME|" /app/gateway.conf
+sed -i "s|^GatewayUDP6Hops=.*$|GatewayUDP6Hops=64|" /app/gateway.conf
+sed -i "s|^GatewayUDP6Port=.*$|GatewayUDP6Port=47193|" /app/gateway.conf
 
 echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -B $BACKBONE_INTERFACE -d7 $RADIO_URL\"" >/etc/default/otbr-agent
 echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" >/etc/default/otbr-web
@@ -162,7 +162,7 @@ ot-ctl dataset networkname "$NETWORK_NAME"
 # Set the dataset timestamp to 'now'. This will ensure that when the border router is
 # restarted (and thus gets  a different mesh-local prefix), the nodes which were previously
 # connected to the network will be forced to move over to this new mesh-local prefix.
-ot-ctl dataset activetimestamp $(date +%s)
+ot-ctl dataset activetimestamp "$(date +%s)"
 ot-ctl dataset networkkey "$MASTER_KEY"
 ot-ctl dataset panid "$PANID"
 ot-ctl dataset extpanid "$XPANID"
@@ -177,9 +177,14 @@ ot-ctl dataset channel "$CHANNEL"
 # is allowed. This avoids the issue with the announce feature, but will prevent channel hopping
 # from taking place (which would be a very advanced use-case versus having sleepy devices in the
 # network).
-CHANNELMASK=$((2 ** $CHANNEL))
-CHANNELMASK=$(printf '0x%08x' $CHANNELMASK)
-ot-ctl dataset channelmask $CHANNELMASK
+# Validate CHANNEL is a number before arithmetic operation
+if [[ ! "$CHANNEL" =~ ^[0-9]+$ ]]; then
+    echo "Error: CHANNEL must be a number, got: $CHANNEL"
+    exit 1
+fi
+CHANNELMASK=$((2 ** CHANNEL))
+CHANNELMASK=$(printf '0x%08x' "$CHANNELMASK")
+ot-ctl dataset channelmask "$CHANNELMASK"
 ot-ctl dataset pskc "$PSKC"
 ot-ctl dataset commit active
 ot-ctl ifconfig up
@@ -188,10 +193,14 @@ ot-ctl thread start
 # Set the address on which the MQTT-SN gateway needs to listen for discovery requests
 # Defaults to Thread's mesh-local "all nodes" address unless explicitly overridden
 MESH=$(ot-ctl dataset meshlocalprefix | sed -n 1p | sed 's/Mesh Local Prefix: //' | awk -F '::' '{print $1}')
+if [[ -z "$MESH" ]]; then
+    echo "Error: Failed to extract mesh local prefix"
+    exit 1
+fi
 [ -n "$MQTTSN_BROADCAST_ADDRESS" ] || MQTTSN_BROADCAST_ADDRESS="ff33:40:$MESH::1"
-sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=$MQTTSN_BROADCAST_ADDRESS/" /app/gateway.conf
+sed -i "s|^GatewayUDP6Broadcast=.*$|GatewayUDP6Broadcast=$MQTTSN_BROADCAST_ADDRESS|" /app/gateway.conf
 
-echo "Starting MQTT-SN Gateway listening on: " $MQTTSN_BROADCAST_ADDRESS
-nohup 2>&1 /app/MQTT-SNGateway &
+echo "Starting MQTT-SN Gateway listening on: " "$MQTTSN_BROADCAST_ADDRESS"
+nohup /app/MQTT-SNGateway 2>&1 &
 
 tail -f /var/log/syslog
