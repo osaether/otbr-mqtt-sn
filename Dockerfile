@@ -1,11 +1,11 @@
-ARG MQTT_SN_COMMIT=f2dcda358f21e264de57b47b00ab6165bab4da18
+ARG MQTT_SN_COMMIT=07a95121fc40ee74de4695a23518a312fb802fe8
 
 FROM ubuntu:18.04 AS build-mqtt
 
 ARG MQTT_SN_COMMIT
 
 ENV MQTT_SN_REPO=paho.mqtt-sn.embedded-c
-ENV MQTT_SN_ZIP=https://github.com/eclipse/"$MQTT_SN_REPO"/archive/"$MQTT_SN_COMMIT".zip
+ENV MQTT_SN_ZIP=https://github.com/eclipse-paho/"$MQTT_SN_REPO"/archive/"$MQTT_SN_COMMIT".zip
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
