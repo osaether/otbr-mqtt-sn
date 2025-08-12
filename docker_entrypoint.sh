@@ -82,12 +82,12 @@ function parse_args()
             shift
             shift
             ;;
-        --masterkey-key)
+        --network-key)
             MASTER_KEY=$2
             shift
             shift
             ;;
-        --psck)
+        --pskc)
             PSKC=$2
             shift
             shift
