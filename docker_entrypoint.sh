@@ -27,6 +27,8 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set -euo pipefail
+
 export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 function parse_args()
@@ -35,22 +37,38 @@ function parse_args()
     do
         case $1 in
         --radio-url)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --radio-url requires a value" >&2
+                exit 1
+            fi
             RADIO_URL="$2"
             shift
             shift
             ;;
         --interface|-I)
-            TUN_INTERFACE_NAME=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --interface requires a value" >&2
+                exit 1
+            fi
+            TUN_INTERFACE_NAME="$2"
             shift
             shift
             ;;
         --backbone-interface | -B)
-            BACKBONE_INTERFACE=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --backbone-interface requires a value" >&2
+                exit 1
+            fi
+            BACKBONE_INTERFACE="$2"
             shift
             shift
             ;;
         --nat64-prefix)
-            NAT64_PREFIX=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --nat64-prefix requires a value" >&2
+                exit 1
+            fi
+            NAT64_PREFIX="$2"
             shift
             shift
             ;;
@@ -63,47 +81,79 @@ function parse_args()
             shift
             ;;
         --panid)
-            PANID=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --panid requires a value" >&2
+                exit 1
+            fi
+            PANID="$2"
             shift
             shift
             ;;
         --xpanid)
-            XPANID=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --xpanid requires a value" >&2
+                exit 1
+            fi
+            XPANID="$2"
             shift
             shift
             ;;
         --channel)
-            CHANNEL=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --channel requires a value" >&2
+                exit 1
+            fi
+            CHANNEL="$2"
             shift
             shift
             ;;
         --network-name)
-            NETWORK_NAME=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --network-name requires a value" >&2
+                exit 1
+            fi
+            NETWORK_NAME="$2"
             shift
             shift
             ;;
         --network-key)
-            NETWORK_KEY=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --network-key requires a value" >&2
+                exit 1
+            fi
+            NETWORK_KEY="$2"
             shift
             shift
             ;;
         --pskc)
-            PSKC=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --pskc requires a value" >&2
+                exit 1
+            fi
+            PSKC="$2"
             shift
             shift
             ;;
 
         --broker)
-            BROKER_NAME=$2
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --broker requires a value" >&2
+                exit 1
+            fi
+            BROKER_NAME="$2"
             shift
             shift
             ;;
 
         --mqttsn-broadcast-address)
-           MQTTSN_BROADCAST_ADDRESS=$2
-           shift
-           shift
-           ;;
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --mqttsn-broadcast-address requires a value" >&2
+                exit 1
+            fi
+            MQTTSN_BROADCAST_ADDRESS="$2"
+            shift
+            shift
+            ;;
 
         *)
             shift
@@ -130,21 +180,39 @@ parse_args "$@"
 [ -n "$CHANNEL" ] || CHANNEL="11"
 [ -n "$BROKER_NAME" ] || BROKER_NAME="mqtt.eclipseprojects.io"
 
-echo "RADIO_URL:" $RADIO_URL
-echo "TUN_INTERFACE_NAME:" $TUN_INTERFACE_NAME
-echo "BACKBONE_INTERFACE:" $BACKBONE_INTERFACE
-echo "NAT64_PREFIX:" $NAT64_PREFIX
-echo "AUTO_PREFIX_ROUTE:" $AUTO_PREFIX_ROUTE
-echo "AUTO_PREFIX_SLAAC:" $AUTO_PREFIX_SLAAC
+echo "RADIO_URL: ${RADIO_URL}"
+echo "TUN_INTERFACE_NAME: ${TUN_INTERFACE_NAME}"
+echo "BACKBONE_INTERFACE: ${BACKBONE_INTERFACE}"
+echo "NAT64_PREFIX: ${NAT64_PREFIX}"
+echo "AUTO_PREFIX_ROUTE: ${AUTO_PREFIX_ROUTE}"
+echo "AUTO_PREFIX_SLAAC: ${AUTO_PREFIX_SLAAC}"
 
 NAT64_PREFIX=${NAT64_PREFIX/\//\\\/}
 
-sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf
-sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options
+if ! sed -i "s/^prefix.*$/prefix $NAT64_PREFIX/" /etc/tayga.conf; then
+    echo "Error: Failed to configure tayga.conf" >&2
+    exit 1
+fi
 
-sed -i "s/^BrokerName=.*$/BrokerName=$BROKER_NAME/" /app/gateway.conf
-sed -i "s/^GatewayUDP6Hops=.*$/GatewayUDP6Hops=64/" /app/gateway.conf
-sed -i "s/^GatewayUDP6Port=.*$/GatewayUDP6Port=47193/" /app/gateway.conf
+if ! sed -i "s/dns64.*$/dns64 $NAT64_PREFIX {};/" /etc/bind/named.conf.options; then
+    echo "Error: Failed to configure named.conf.options" >&2
+    exit 1
+fi
+
+if ! sed -i "s/^BrokerName=.*$/BrokerName=$BROKER_NAME/" /app/gateway.conf; then
+    echo "Error: Failed to configure broker name in gateway.conf" >&2
+    exit 1
+fi
+
+if ! sed -i "s/^GatewayUDP6Hops=.*$/GatewayUDP6Hops=64/" /app/gateway.conf; then
+    echo "Error: Failed to configure UDP6 hops in gateway.conf" >&2
+    exit 1
+fi
+
+if ! sed -i "s/^GatewayUDP6Port=.*$/GatewayUDP6Port=47193/" /app/gateway.conf; then
+    echo "Error: Failed to configure UDP6 port in gateway.conf" >&2
+    exit 1
+fi
 
 echo "OTBR_AGENT_OPTS=\"-I $TUN_INTERFACE_NAME -B $BACKBONE_INTERFACE -d7 $RADIO_URL\"" >/etc/default/otbr-agent
 echo "OTBR_WEB_OPTS=\"-I $TUN_INTERFACE_NAME -d7 -p 80\"" >/etc/default/otbr-web
@@ -189,9 +257,12 @@ ot-ctl thread start
 # Defaults to Thread's mesh-local "all nodes" address unless explicitly overridden
 MESH=$(ot-ctl dataset meshlocalprefix | sed -n 1p | sed 's/Mesh Local Prefix: //' | awk -F '::' '{print $1}')
 [ -n "$MQTTSN_BROADCAST_ADDRESS" ] || MQTTSN_BROADCAST_ADDRESS="ff33:40:$MESH::1"
-sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=$MQTTSN_BROADCAST_ADDRESS/" /app/gateway.conf
+if ! sed -i "s/^GatewayUDP6Broadcast=.*$/GatewayUDP6Broadcast=$MQTTSN_BROADCAST_ADDRESS/" /app/gateway.conf; then
+    echo "Error: Failed to configure MQTT-SN broadcast address in gateway.conf" >&2
+    exit 1
+fi
 
-echo "Starting MQTT-SN Gateway listening on: " $MQTTSN_BROADCAST_ADDRESS
+echo "Starting MQTT-SN Gateway listening on: ${MQTTSN_BROADCAST_ADDRESS}"
 nohup 2>&1 /app/MQTT-SNGateway &
 
 tail -f /var/log/syslog
