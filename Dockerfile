@@ -11,7 +11,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt -y update
 RUN DEBIAN_FRONTEND=noninteractive apt -y install wget unzip libssl-dev build-essential
 RUN DEBIAN_FRONTEND=noninteractive apt -y install libc6-dev-amd64-cross cmake
 
-RUN wget --progress=dot:giga --no-check-certificate -O "$MQTT_SN_REPO".zip "$MQTT_SN_ZIP"
+RUN wget --progress=dot:giga -O "$MQTT_SN_REPO".zip "$MQTT_SN_ZIP"
 RUN unzip "$MQTT_SN_REPO".zip
 RUN rm "$MQTT_SN_REPO".zip
 RUN cd "$MQTT_SN_REPO"-"$MQTT_SN_COMMIT"/MQTTSNGateway && ./build.sh udp6
