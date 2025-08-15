@@ -83,7 +83,7 @@ function parse_args()
             shift
             ;;
         --network-key)
-            MASTER_KEY=$2
+            NETWORK_KEY=$2
             shift
             shift
             ;;
@@ -124,7 +124,7 @@ parse_args "$@"
 [ -n "$PSKC" ] || PSKC="5ce66d049d007088ad900dfcc2a55ee3"
 # Use same default network configuration as the Nordic Semiconductor Raspberry PI
 # borderrouter (see /etc/border_router.conf on the RPI)
-[ -n "$MASTER_KEY" ] || MASTER_KEY="00112233445566778899AABBCCDDEEFF"
+[ -n "$NETWORK_KEY" ] || NETWORK_KEY="00112233445566778899AABBCCDDEEFF"
 [ -n "$PANID" ] || PANID="0xABCD"
 [ -n "$XPANID" ] || XPANID="DEAD00BEEF00CAFE"
 [ -n "$CHANNEL" ] || CHANNEL="11"
@@ -163,7 +163,7 @@ ot-ctl dataset networkname "$NETWORK_NAME"
 # restarted (and thus gets  a different mesh-local prefix), the nodes which were previously
 # connected to the network will be forced to move over to this new mesh-local prefix.
 ot-ctl dataset activetimestamp $(date +%s)
-ot-ctl dataset networkkey "$MASTER_KEY"
+ot-ctl dataset networkkey "$NETWORK_KEY"
 ot-ctl dataset panid "$PANID"
 ot-ctl dataset extpanid "$XPANID"
 ot-ctl dataset channel "$CHANNEL"
